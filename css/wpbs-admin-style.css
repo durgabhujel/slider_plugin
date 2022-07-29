@@ -1,0 +1,49 @@
+.wpbs-add-meta-slide {
+    background-color: #FAFAFA;
+    padding: 20px;
+    margin-bottom: 200px;
+    border: 1px solid #FAFAFA;
+    width: 100%;
+    height: auto;
+    margin-top: -100px;
+    padding-left: 20%;
+}
+
+.wpbs-add-slide-option-wrap {
+    display: block;
+    padding-left: 20px;
+    padding-top: -200px!important;
+}
+
+.wpbs-option-wrapper {
+    margin-bottom: 20px;
+}
+
+.wpbs-option-wrapper label {
+    font-size: 14px;
+    font-weight: bold;
+    width: 100%;
+    padding-top: 10px;
+    padding-bottom: 7px;
+}
+
+.wpbs-option-field {
+    width: 100%;
+}
+
+.button-primary {
+    margin-top: 10px;
+}
+
+.button-primary-delete {
+    padding: 7px;
+    background-color: blue;
+    color: #FAFAFA;
+    margin-top: 10px;
+    border: 1px solid #FAFAFA;
+    border-radius: 10px;
+}
+
+.wpbs-show-slider-image .wbps-option-wrapper label {
+    margin-bottom: 10px;
+}
