@@ -23,6 +23,7 @@ if(!class_exists('WPS_Class')){
            add_shortcode ('wpbs', array($this, 'banner_slider_shortcode_genarater') );
            add_action( 'admin_head-post-new.php', array( $this, 'wpbs_posttype_admin_css' ) );
            add_action( 'admin_head-post.php', array( $this, 'wpbs_posttype_admin_css' ) );
+           add_action('save_post',array($this, 'wpbs_save_post'), 10, 3); // for the save post
         }
         function wpbs_register_post_type(){
             include('inc/wpbs-register-post.php');
@@ -31,7 +32,7 @@ if(!class_exists('WPS_Class')){
         function define_constants(){
             defined( 'WPBS_JS_DIR' ) or define( 'WPBS_JS_DIR', plugin_dir_url( __FILE__ ) . 'js' );
             defined( 'WPBS_CSS_DIR' ) or define( 'WPBS_CSS_DIR', plugin_dir_url( __FILE__ ) . 'css' );
-            defined( 'WPBS_PATH') or define('WPBS_PATH', plugin_dir_path(__FILE__)); 
+            // defined( 'WPBS_PATH') or define('WPBS_PATH', plugin_dir_url(__FILE__)); 
         }
         function wpbs_register_admin_assets( $hook ){
 
@@ -40,7 +41,7 @@ if(!class_exists('WPS_Class')){
             wp_enqueue_style( 'wp-color-picker' );
             wp_enqueue_script( 'wp-color-picker');
             wp_enqueue_script( 'wp-color-picker-alpha', WPBS_JS_DIR. '/wp-color-picker-alpha.min.js', array( 'jquery', 'wp-color-picker' ), true);
-            wp_enqueue_script( 'wpbs_admin_script' , WPBS_JS_DIR . 'wpbs_admin_script.js' , array('jquery') );
+            wp_enqueue_script( 'wpbs_admin_script' , WPBS_JS_DIR . '/wpbs_admin_script.js' , array('jquery'), false );
             wp_enqueue_style( 'wpbs-admin-style', WPBS_CSS_DIR . '/wpbs-admin-style.css', false);
         }
         function wpbs_add_slides_metabox( ){
@@ -55,11 +56,61 @@ if(!class_exists('WPS_Class')){
 
         }
         function wpbs_admin_footer_function(){
-            global  $post;
+                include('inc/wpbs-form-footer.php');
+        }
 
-            if ($post && $post -> post_type == 'banner_slider'){
-              include_once(WPBS_PATH . 'inc/wpbs-form-footer.php');
+        function wpbs_save_post($post_id, $post, $update){
+
+            if( isset( $_POST['wpbs_option']) ){
+                echo "<pre>";
+                var_dump($_POST['wpbs_option']);
+                echo "</pre>";
+                update_post_meta($post_id, 'wpbs_option', $_POST['wpbs_option'] );
+            } return;
+            //checks save status
+            $is_autosave = wp_is_post_auto_save($post_id);
+            $is_revision = wp_is_post_revision($post_id);
+            $is_valid_nonce (isset($_POST['wpbs_slider_image_nonce']) && wp_verify_nonce($_POST['wpbs_slider_image_nonce'],basename(__FILE__)))? 'true': 'false';
+
+            //exits script depending on save status
+            if ( $is_autosave || $is_revision || ! $is_valid_nonce ) {
+                return;
             }
+
+            if (isset($_POST[ 'wpbs_option[slides][slide_1][slide_title]' ]) && wp_verify_nonce($_POST['wpbs_option[slides][slide_1][slide_title]']) ){
+                $titles = sanitize_text_field($_POST['wpbs_option[slides][slide_1][slide_title]']);
+                foreach($titles as $key=> $value) {
+                    update_post_meta($post_id, 'wpbs_option[slides][slide_1][slide_title]', sanitize_text_field($value) );
+                }
+
+            }
+            if ( isset( $_POST[ 'wpbs_option[slides][slide_1][slide_description]' ] ) && is_array( $_POST[ 'wpbs_option[slides][slide_1][slide_description]' ] ) ) {
+                $descriptions = sanitize_text_field( $_POST[ 'wpbs_option[slides][slide_1][slide_description]' ] );
+                foreach ( $descriptions as $key => $value ) {
+                    update_post_meta( $post_id, 'wpbs_option[slides][slide_1][slide_description]', sanitize_text_field( $value ) );
+                }
+            }
+            if ( isset( $_POST[ 'wpbs_option[slides][slide_1][slide_image_url]' ] ) && is_array( $_POST[ 'wpbs_option[slides][slide_1][slide_image_url]' ] ) ){
+                $image_url = $_POST[ 'wpbs_option[slides][slide_1][slide_image_url]' ] ;
+                foreach ( $image_url as $key => $value ) {
+                    update_post_meta( $post_id, 'wpbs_option[slides][slide_1][slide_image_url]', sanitize_text_field($value) );
+                }
+            }
+            if ( isset( $_POST[ 'wpbs_option[slides][slide_1][slide_button_url]' ] ) && is_array( $_POST[ 'wpbs_option[slides][slide_1][slide_button_url]' ] ) ) {
+                $button_url = $_POST[ 'wpbs_option[slides][slide_1][slide_button_url]' ];
+                foreach ( $button_url as $key => $value ) {
+                    update_post_meta( $post_id, 'wpbs_option[slides][slide_1][slide_button_url]', sanitize_text_field( $value ) );
+                }
+            }
+            if ( isset( $_POST[ 'wpbs_option[slides][slide_1][slide_button_text]' ] ) && is_array( $_POST[ 'wpbs_option[slides][slide_1][slide_button_text]' ] ) ) {
+                $button_text = $_POST[ 'wpbs_option[slides][slide_1][slide_button_text]' ];
+                foreach ( $button_text as $key => $value ) {
+                    update_post_meta( $post_id, 'wpbs_option[slides][slide_1][slide_button_text]', sanitize_text_field( $value ) );
+                }
+            }
+
+
+
         }
 
        
@@ -75,29 +126,8 @@ if(!class_exists('WPS_Class')){
         // }
 
 
-        function banner_slider_shortcode_genarater($atts, $content = "null" ){
-            global $post;
-            extract( 'shortcode_atts' (array('id'=> '$post->ID'),atts) );
-
-
-            $args = array(
-
-                'post_type' => 'banner_slider',
-                'post_status' => 'publish',
-                'post_per_page' => 1
-            );
-            $banner_slider = new WP_Query( $args );
-            if($banner_slider -> have_post() ):
-                ob_start();
-                include('inc/banner-slider-shortcode.php');
-                $banner_slider = ob_get_contents();
-
-            endif;
-            wp_reset_query();
-
-            ob_end_clean();
-            return $banner_slider;
-
+        function banner_slider_shortcode_genarater(){
+            include('inc/wpbs_shortcode.php');
         }
         function load_default_setting(){
             $bs_setting = array();
